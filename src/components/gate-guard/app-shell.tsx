@@ -10,19 +10,17 @@ import { SyncStatusBar } from './sync-status-bar'
 import { LoginView } from './login-view'
 import { ScannerView } from './scanner-view'
 import { DashboardView } from './dashboard-view'
-import { AnalyticsView } from './analytics-view'
 import { BlocklistView } from './blocklist-view'
 import { DemoCardView } from './demo-card-view'
-import { Camera, LayoutDashboard, BarChart3, ShieldAlert, IdCard } from 'lucide-react'
+import { Camera, LayoutDashboard, ShieldAlert, IdCard } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-type Tab = 'scanner' | 'dashboard' | 'analytics' | 'blocklist' | 'demo'
+type Tab = 'scanner' | 'dashboard' | 'blocklist' | 'demo'
 
 export function AppShell() {
   const { session, language } = useAppStore()
   const [activeTab, setActiveTab] = useState<Tab>('scanner')
 
-  // If not signed in, show login screen
   if (!session) {
     return (
       <div className="flex min-h-screen flex-col bg-oromo-cream">
@@ -41,12 +39,10 @@ export function AppShell() {
       <main className="flex flex-1 flex-col">
         {activeTab === 'scanner' && <ScannerView />}
         {activeTab === 'dashboard' && <DashboardView />}
-        {activeTab === 'analytics' && <AnalyticsView />}
         {activeTab === 'blocklist' && <BlocklistView />}
         {activeTab === 'demo' && <DemoCardView />}
       </main>
 
-      {/* Bottom navigation — mobile-first */}
       <nav className="sticky bottom-0 z-30 border-t border-oromo-yellow/30 bg-white shadow-lg">
         <div className="mx-auto flex max-w-5xl">
           <TabButton
@@ -61,12 +57,6 @@ export function AppShell() {
             onClick={() => setActiveTab('dashboard')}
             icon={<LayoutDashboard className="h-5 w-5" />}
             label={t(language, 'navDashboard')}
-          />
-          <TabButton
-            active={activeTab === 'analytics'}
-            onClick={() => setActiveTab('analytics')}
-            icon={<BarChart3 className="h-5 w-5" />}
-            label={t(language, 'navAnalytics')}
           />
           <TabButton
             active={activeTab === 'blocklist'}

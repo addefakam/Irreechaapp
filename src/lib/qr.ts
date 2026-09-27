@@ -77,8 +77,8 @@ export function useQrScanner(opts: {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: { ideal: 'environment' },
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
+            width: { ideal: 960 },
+            height: { ideal: 540 },
           },
           audio: false,
         })
@@ -129,7 +129,8 @@ export function useQrScanner(opts: {
             if (code && code.data) {
               const now = Date.now()
               const last = lastScanRef.current
-              if (!(last && last.raw === code.data && now - last.ts < 2500)) {
+              // Debounce: same QR within 1200ms = ignore (lets operator move to next ID faster)
+              if (!(last && last.raw === code.data && now - last.ts < 1200)) {
                 lastScanRef.current = { raw: code.data, ts: now }
                 onScanRef.current(parseEthiopianQR(code.data))
               }

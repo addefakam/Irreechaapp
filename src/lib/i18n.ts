@@ -45,9 +45,11 @@ export const translations = {
     manualEntry: 'Manual Entry',
     manualEntryHint: 'Enter the 16-digit national ID number',
     enterIdNumber: 'National ID Number',
-    submitManual: 'Look Up Visitor',
+    submitManual: 'Save Scan',
     scanAnother: 'Scan Another',
     noCameraAccess: 'No camera access',
+    scanned: 'Scanned',
+    readyToScan: 'Ready — scan visitor ID',
 
     // Scan results
     admitted: 'ADMITTED',
@@ -181,9 +183,11 @@ export const translations = {
     manualEntry: 'Galchii Harkaa',
     manualEntryHint: 'Lakkoofsa idaa biyyaalessaa diigitaal 16 galchi',
     enterIdNumber: 'Lakkoofsa Ida\'aa Biyyaalessaa',
-    submitManual: 'Dhiyaataa Barbaadi',
+    submitManual: 'Sukaaksa Ol-kayisi',
     scanAnother: 'Bira Sukaaksi',
     noCameraAccess: 'Foyya\'iinsi kaameraa hin jiru',
+    scanned: 'Sukaaksameera',
+    readyToScan: 'Hoijete — idaa dhiyaataa suukaaksi',
 
     // Scan results
     admitted: 'SEENYAMEERA',

@@ -12,7 +12,7 @@ export type LocalScan = {
   gateId: string
   gateCode: string
   operatorPin: string
-  status: 'ADMITTED' | 'BLOCKED' | 'REENTRY_WARN' | 'NOT_FOUND'
+  status: 'SCANNED' | 'ADMITTED' | 'BLOCKED' | 'REENTRY_WARN' | 'NOT_FOUND'
   reason: string | null
   scannedAt: string // ISO timestamp
   synced: 0 | 1 // 0 = pending, 1 = synced
