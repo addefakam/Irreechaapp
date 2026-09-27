@@ -69,6 +69,9 @@ export const mockGates: GateRecord[] = [
   },
 ]
 
+// Operator PINs (demo): 1001, 1002, 1003, 1004
+export const VALID_PINS = ['1001', '1002', '1003', '1004']
+
 // ---- Sample Oromo / Ethiopian names ----
 const firstNamesM = [
   'Tadesse', 'Bekele', 'Demisse', 'Girma', 'Haile', 'Lelisa', 'Mulugeta',

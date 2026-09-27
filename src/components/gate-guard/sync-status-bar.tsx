@@ -1,12 +1,13 @@
-// Sync status bar — shows online/offline state, pending count, sync-now button.
+// Sync status bar — compact strip showing today's count + online/offline + pending sync.
+// Listens for the custom 'gate-guard:scan-saved' event and triggers a background sync.
 
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useAppStore } from '@/lib/store'
 import { t } from '@/lib/i18n'
-import { getPendingScans, markScanSynced } from '@/lib/idb'
-import { CloudOff, Cloud, RefreshCw, Check, Loader2 } from 'lucide-react'
+import { getPendingScans, markScanSynced, getAllLocalScans } from '@/lib/idb'
+import { CloudOff, Cloud, RefreshCw, Check, Loader2, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 type SyncResultState = 'idle' | 'syncing' | 'success' | 'failed'
@@ -14,6 +15,7 @@ type SyncResultState = 'idle' | 'syncing' | 'success' | 'failed'
 export function SyncStatusBar() {
   const {
     language,
+    session,
     sync,
     setOnline,
     setLastSyncAt,
@@ -21,6 +23,7 @@ export function SyncStatusBar() {
     setSyncing,
   } = useAppStore()
   const [resultState, setResultState] = useState<SyncResultState>('idle')
+  const [todayCount, setTodayCount] = useState(0)
 
   // Online/offline events
   useEffect(() => {
@@ -35,28 +38,31 @@ export function SyncStatusBar() {
     }
   }, [setOnline])
 
-  // Refresh pending count
-  const refreshPending = useCallback(async () => {
+  // Refresh pending count + today's count
+  const refreshCounts = useCallback(async () => {
     try {
       const pending = await getPendingScans()
       setPendingCount(pending.length)
+      // Today's scans for this gate
+      const all = await getAllLocalScans(500)
+      const startOfToday = new Date()
+      startOfToday.setHours(0, 0, 0, 0)
+      const startISO = startOfToday.toISOString()
+      const today = all.filter(
+        (s) => s.scannedAt >= startISO && (!session || s.gateId === session.gateId),
+      )
+      setTodayCount(today.length)
     } catch {
       // ignore
     }
-  }, [setPendingCount])
+  }, [setPendingCount, session])
 
   useEffect(() => {
-    refreshPending()
-    const handler = () => refreshPending()
+    refreshCounts()
+    const handler = () => refreshCounts()
     window.addEventListener('gate-guard:scan-saved', handler)
     return () => window.removeEventListener('gate-guard:scan-saved', handler)
-  }, [refreshPending])
-
-  // Keep latest deps in refs so we can have a stable doSync identity
-  const syncRef = useRef(sync)
-  useEffect(() => {
-    syncRef.current = sync
-  }, [sync])
+  }, [refreshCounts])
 
   const doSync = useCallback(async () => {
     if (!navigator.onLine) return
@@ -112,50 +118,53 @@ export function SyncStatusBar() {
       : 'bg-oromo-green/10 border-oromo-green/30 text-oromo-green-dark'
 
   return (
-    <div className={cn('border-b px-4 py-2', bg)}>
-      <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 text-sm">
-        <div className="flex items-center gap-2">
-          {!sync.online ? (
-            <>
-              <CloudOff className="h-4 w-4" />
-              <span className="font-medium">{t(language, 'syncStatusOffline')}</span>
-            </>
-          ) : (
-            <>
-              <Cloud className="h-4 w-4" />
-              <span className="font-medium">{t(language, 'syncStatusOnline')}</span>
-              {sync.pendingCount > 0 && (
-                <span className="ml-1">
-                  {t(language, 'pendingScans', { count: sync.pendingCount })}
-                </span>
-              )}
-              {sync.lastSyncAt && (
-                <span className="ml-1 text-xs opacity-70">
-                  · {t(language, 'lastSync')}:{' '}
-                  {new Date(sync.lastSyncAt).toLocaleTimeString()}
-                </span>
-              )}
-            </>
-          )}
+    <div className={cn('border-b px-3 py-1.5', bg)}>
+      <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 text-sm">
+        {/* Left: today's count badge */}
+        <div className="flex items-center gap-1.5 font-semibold">
+          <Users className="h-4 w-4" />
+          <span className="tabular-nums text-base">{todayCount}</span>
+          <span className="text-xs font-normal opacity-80">
+            {t(language, 'todayCount')}
+          </span>
         </div>
 
-        <div className="flex items-center gap-2">
-          {resultState === 'success' && (
-            <span className="flex items-center gap-1 text-oromo-green-dark">
-              <Check className="h-4 w-4" />
-              {t(language, 'syncSuccess')}
+        {/* Right: sync status + button */}
+        <div className="flex items-center gap-2 text-xs">
+          {!sync.online ? (
+            <span className="flex items-center gap-1">
+              <CloudOff className="h-3.5 w-3.5" />
+              {t(language, 'offline')}
             </span>
-          )}
-          {resultState === 'failed' && (
-            <span className="flex items-center gap-1 text-red-700">
-              {t(language, 'syncFailed')}
+          ) : (
+            <span className="flex items-center gap-1">
+              {resultState === 'success' ? (
+                <>
+                  <Check className="h-3.5 w-3.5" />
+                  {t(language, 'syncSuccess')}
+                </>
+              ) : resultState === 'failed' ? (
+                t(language, 'syncFailed')
+              ) : sync.pendingCount > 0 ? (
+                <>
+                  <Cloud className="h-3.5 w-3.5" />
+                  {t(language, 'pendingScans', { count: sync.pendingCount })}
+                </>
+              ) : (
+                <span className="flex items-center gap-1 opacity-70">
+                  <Cloud className="h-3.5 w-3.5" />
+                  {sync.lastSyncAt
+                    ? new Date(sync.lastSyncAt).toLocaleTimeString()
+                    : t(language, 'syncStatusOnline')}
+                </span>
+              )}
             </span>
           )}
           {sync.online && sync.pendingCount > 0 && (
             <button
               onClick={handleSyncClick}
               disabled={sync.syncing}
-              className="flex items-center gap-1 rounded-md bg-white px-2 py-1 text-xs font-medium border border-current/30 hover:bg-white/80 disabled:opacity-50"
+              className="flex items-center gap-1 rounded-md bg-white px-2 py-0.5 text-[11px] font-medium border border-current/30 hover:bg-white/80 disabled:opacity-50"
             >
               {sync.syncing ? (
                 <Loader2 className="h-3 w-3 animate-spin" />
