@@ -1,0 +1,64 @@
+// Irreecha GateGuard — Prisma schema
+// Backend "center" database that receives synced scans from gate devices.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Visitor {
+  id            String   @id // national ID number (from QR)
+  fullName       String
+  dateOfBirth   String
+  gender        String   // M | F
+  region        String
+  issuedAt      String   // ISO date string
+  createdAt     DateTime @default(now())
+
+  scans         Scan[]
+  blocklistEntry BlocklistEntry?
+
+  @@index([fullName])
+}
+
+model Gate {
+  id          String   @id @default(cuid())
+  code        String   @unique // e.g. "HORARSADI", "BISH_N"
+  nameEn      String
+  nameOr      String
+  capacity    Int      @default(2000)
+  createdAt   DateTime @default(now())
+
+  scans       Scan[]
+}
+
+model Scan {
+  id           String   @id @default(cuid())
+  visitorId    String
+  visitor      Visitor @relation(fields: [visitorId], references: [id])
+  gateId       String
+  gate         Gate   @relation(fields: [gateId], references: [id])
+  operatorPin  String // 4-digit PIN of operator
+  status       String // ADMITTED | BLOCKED | REENTRY_WARN
+  reason       String? // e.g. "Blocklist match", "Re-entry within 4h"
+  scannedAt    DateTime @default(now())
+  syncedFrom   String? // device identifier
+  createdAt    DateTime @default(now())
+
+  @@index([visitorId])
+  @@index([gateId])
+  @@index([scannedAt])
+}
+
+model BlocklistEntry {
+  visitorId   String   @id
+  visitor     Visitor  @relation(fields: [visitorId], references: [id])
+  reason      String
+  severity    String   // HIGH | MEDIUM | LOW
+  addedAt     DateTime @default(now())
+  addedBy     String
+}
